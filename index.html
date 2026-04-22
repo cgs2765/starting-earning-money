@@ -1,14 +1,321 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello World</title>
-  <link href='/style.css' rel='stylesheet'>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HSK 중국어 학습</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #f5f7fb; }
+    header { background: #4a6cf7; color: white; padding: 20px; text-align: center; }
+    .nav { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+    .nav button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; }
+    .container { padding: 20px; }
+    .page { display: none; }
+    .active { display: block; }
+
+    .level { margin-bottom: 20px; }
+    .level button {
+      width: 100%; padding: 15px; font-size: 18px;
+      background: #fff; border: none; border-radius: 10px;
+      cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .words { display: none; margin-top: 10px; }
+    .word-card {
+      background: white; padding: 15px; margin-bottom: 10px;
+      border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+    }
+
+    .word { font-size: 20px; font-weight: bold; }
+    .pinyin { color: #888; }
+    .example { margin-top: 5px; }
+
+    .search-box {
+      width: 100%; padding: 10px; margin-bottom: 15px;
+      border-radius: 8px; border: 1px solid #ccc;
+    }
+    .speaker-icon {
+      margin-left: 10px;
+      cursor: pointer;
+      color: #4a6cf7;
+      font-weight: bold;
+    }
+    .word-card.learned {
+      background-color: #e6ffe6; /* Light green for learned words */
+      border-left: 5px solid #4CAF50;
+    }
+  </style>
 </head>
 <body>
-  <h1>Hello, world!</h1>
-  <button onclick="console.log('hello');">Press me</button>
-  <script defer type="text/javascript" src="/main.js"></script>
+
+<header>
+  <h1>HSK 중국어 학습</h1>
+  <div class="nav">
+    <button onclick="showPage('home')">학습</button>
+    <button onclick="showPage('list')">단어 리스트</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- 학습 페이지 -->
+  <div id="home" class="page active"></div>
+
+  <!-- 단어 리스트 페이지 -->
+  <div id="list" class="page">
+    <div id="progress-display" style="margin-bottom: 15px; font-weight: bold;"></div>
+    <input type="text" class="search-box" placeholder="단어 검색..." onkeyup="searchWord(this.value)">
+    <div id="wordList"></div>
+  </div>
+
+</div>
+
+<script>
+  const hskData = {
+    HSK1: [
+      { char: '你好', pinyin: 'nǐ hǎo', meaning: 'hello', example: '你好！很高兴见到你。' },
+      { char: '谢谢', pinyin: 'xiè xie', meaning: 'thank you', example: '谢谢你的帮助。' },
+      { char: '再见', pinyin: 'zài jiàn', meaning: 'goodbye', example: '老师，再见！' },
+      { char: '是', pinyin: 'shì', meaning: 'to be, yes', example: '我是学生。' },
+      { char: '不', pinyin: 'bù', meaning: 'no, not', example: '我不是老师。' },
+      { char: '的', pinyin: 'de', meaning: 'possessive particle', example: '我的书。' },
+      { char: '一', pinyin: 'yī', meaning: 'one', example: '一个人。' },
+      { char: '二', pinyin: 'èr', meaning: 'two', example: '两个人。' },
+      { char: '三', pinyin: 'sān', meaning: 'three', example: '三本书。' },
+      { char: '四', pinyin: 'sì', meaning: 'four', example: '四个苹果。' },
+      { char: '五', pinyin: 'wǔ', meaning: 'five', example: '五杯水。' },
+      { char: '六', pinyin: 'liù', meaning: 'six', example: '六个朋友。' },
+      { char: '七', pinyin: 'qī', meaning: 'seven', example: '七点钟。' },
+      { char: '八', pinyin: 'bā', meaning: 'eight', example: '八岁。' },
+      { char: '九', pinyin: 'jiǔ', meaning: 'nine', example: '九月。' },
+      { char: '十', pinyin: 'shí', meaning: 'ten', example: '十块钱。' },
+      { char: '口', pinyin: 'kǒu', meaning: 'mouth', example: '张开口。' },
+      { char: '目', pinyin: 'mù', meaning: 'eye', example: '目光。' },
+      { char: '耳', pinyin: 'ěr', meaning: 'ear', example: '耳朵。' },
+      { char: '手', pinyin: 'shǒu', meaning: 'hand', example: '洗手。' },
+      { char: '足', pinyin: 'zú', meaning: 'foot', example: '满足。' },
+      { char: '人', pinyin: 'rén', meaning: 'person', example: '这个人。' },
+      { char: '他', pinyin: 'tā', meaning: 'he, him', example: '他是谁？' },
+      { char: '她', pinyin: 'tā', meaning: 'she, her', example: '她很漂亮。' },
+      { char: '你', pinyin: 'nǐ', meaning: 'you', example: '你吃饭了吗？' },
+      { char: '我', pinyin: 'wǒ', meaning: 'I, me', example: '我爱中国。' },
+    ],
+    HSK2: [
+      { char: '喜欢', pinyin: 'xǐ huān', meaning: 'to like', example: '我喜欢学汉语。' },
+      { char: '吃饭', pinyin: 'chī fàn', meaning: 'to eat meal', example: '我们一起吃饭吧。' },
+      { char: '商店', pinyin: 'shāng diàn', meaning: 'shop', example: '这个商店很大。' },
+      { char: '买', pinyin: 'mǎi', meaning: 'to buy', example: '我想买一本书。' },
+      { char: '多少', pinyin: 'duō shao', meaning: 'how much/many', example: '这个多少钱？' },
+      { char: '钱', pinyin: 'qián', meaning: 'money', example: '我有钱。' },
+      { char: '月', pinyin: 'yuè', meaning: 'month', example: '一月。' },
+      { char: '年', pinyin: 'nián', meaning: 'year', example: '今年。' },
+      { char: '日', pinyin: 'rì', meaning: 'day, sun', example: '生日。' },
+      { char: '大', pinyin: 'dà', meaning: 'big', example: '大房子。' },
+      { char: '小', pinyin: 'xiǎo', meaning: 'small', example: '小猫。' },
+      { char: '多', pinyin: 'duō', meaning: 'many, much', example: '很多。' },
+      { char: '少', pinyin: 'shǎo', meaning: 'few, little', example: '很少。' },
+      { char: '来', pinyin: 'lái', meaning: 'to come', example: '他来了。' },
+      { char: '去', pinyin: 'qù', meaning: 'to go', example: '我去学校。' },
+      { char: '看', pinyin: 'kàn', meaning: 'to see, to look', example: '看电视。' },
+      { char: '听', pinyin: 'tīng', meaning: 'to listen', example: '听音乐。' },
+      { char: '说', pinyin: 'shuō', meaning: 'to speak', example: '说汉语。' },
+      { char: '读', pinyin: 'dú', meaning: 'to read', example: '读书。' },
+      { char: '写', pinyin: 'xiě', meaning: 'to write', example: '写字。' },
+      { char: '吃', pinyin: 'chī', meaning: 'to eat', example: '吃饭。' },
+      { char: '喝', pinyin: 'hē', meaning: 'to drink', example: '喝水。' },
+      { char: '睡觉', pinyin: 'shuì jiào', meaning: 'to sleep', example: '我睡觉了。' },
+      { char: '工作', pinyin: 'gōng zuò', meaning: 'work, to work', example: '我在工作。' },
+      { char: '学习', pinyin: 'xué xí', meaning: 'to study, to learn', example: '学习汉语。' },
+    ],
+    HSK3: [
+      { char: '觉得', pinyin: 'jué de', meaning: 'to feel, to think', example: '我觉得这很有意思。' },
+      { char: '方便', pinyin: 'fāng biàn', meaning: 'convenient', example: '这里交通很方便。' },
+      { char: '比较', pinyin: 'bǐ jiào', meaning: 'relatively, comparatively', example: '今天天气比较冷。' },
+      { char: '旅游', pinyin: 'lǚ yóu', meaning: 'to travel, tourism', example: '我喜欢去旅游。' },
+      { char: '选择', pinyin: 'xuǎn zé', meaning: 'to choose, choice', example: '这是一个好的选择。' },
+      { char: '开始', pinyin: 'kāi shǐ', meaning: 'to start, to begin', example: '我们明天开始学习。' },
+      { char: '完', pinyin: 'wán', meaning: 'to finish, to be over', example: '我做完作业了。' },
+      { char: '懂', pinyin: 'dǒng', meaning: 'to understand', example: '你懂了吗？' },
+      { char: '告诉', pinyin: 'gào su', meaning: 'to tell', example: '请告诉我。' },
+      { char: '回答', pinyin: 'huí dá', meaning: 'to answer', example: '请回答我的问题。' },
+      { char: '问题', pinyin: 'wèn tí', meaning: 'question, problem', example: '这个问题很难。' },
+      { char: '帮助', pinyin: 'bāng zhù', meaning: 'to help', example: '谢谢你的帮助。' },
+      { char: '可以', pinyin: 'kě yǐ', meaning: 'can, may', example: '我可以进来吗？' },
+      { char: '能', pinyin: 'néng', meaning: 'can, be able to', example: '我能说汉语。' },
+      { char: '会', pinyin: 'huì', meaning: 'can, be able to, to know how to', example: '我会开车。' },
+      { char: '要', pinyin: 'yào', meaning: 'to want, to need, important', example: '我要一杯水。' },
+      { char: '想', pinyin: 'xiǎng', meaning: 'to want to, to think, to miss', example: '我想去中国。' },
+      { char: '觉得', pinyin: 'jué de', meaning: 'to feel, to think', example: '我觉得这很好。' },
+      { char: '知道', pinyin: 'zhī dào', meaning: 'to know', example: '我知道了。' },
+      { char: '介绍', pinyin: 'jiè shào', meaning: 'to introduce', example: '我介绍一下我的朋友。' },
+      { char: '认识', pinyin: 'rèn shi', meaning: 'to know (a person)', example: '很高兴认识你。' },
+      { char: '高兴', pinyin: 'gāo xìng', meaning: 'happy', example: '我很高兴。' },
+      { char: '生气', pinyin: 'shēng qì', meaning: 'angry', example: '他生气了。' },
+      { char: '难过', pinyin: 'nán guò', meaning: 'sad', example: '我很难过。' },
+      { char: '舒服', pinyin: 'shū fu', meaning: 'comfortable', example: '我很舒服。' },
+    ],
+    HSK4: [], // Placeholder for HSK4 data
+    HSK5: [], // Placeholder for HSK5 data
+    HSK6: [], // Placeholder for HSK6 data
+  };
+
+  const homePage = document.getElementById('home');
+  const wordListPage = document.getElementById('wordList');
+
+  let learnedWords = new Set(); // Stores characters of learned words
+
+  function createWordCard(word, showExample = true) {
+    const card = document.createElement('div');
+    card.classList.add('word-card');
+    card.setAttribute('data-char', word.char); // Add data attribute for easier lookup
+
+    if (learnedWords.has(word.char)) {
+      card.classList.add('learned');
+    }
+
+    card.onclick = () => toggleLearnedWord(word.char, card);
+
+    const wordContent = document.createElement('div');
+    wordContent.classList.add('word-content');
+    wordContent.innerHTML = `
+      <div class="word">${word.char}</div>
+      <div class="pinyin">${word.pinyin}</div>
+    `;
+    card.appendChild(wordContent);
+
+    const speakerIconWord = document.createElement('span');
+    speakerIconWord.classList.add('speaker-icon');
+    speakerIconWord.textContent = '🔊';
+    speakerIconWord.title = 'Listen to word';
+    speakerIconWord.onclick = (event) => {
+      event.stopPropagation(); // Prevent card click event from firing
+      speakText(word.char);
+    };
+    wordContent.appendChild(speakerIconWord);
+
+    if (showExample && word.example) {
+      const exampleContent = document.createElement('div');
+      exampleContent.classList.add('example');
+      exampleContent.textContent = `Example: ${word.example}`;
+      card.appendChild(exampleContent);
+
+      const speakerIconExample = document.createElement('span');
+      speakerIconExample.classList.add('speaker-icon');
+      speakerIconExample.textContent = '🔊';
+      speakerIconExample.title = 'Listen to example';
+      speakerIconExample.onclick = (event) => {
+        event.stopPropagation(); // Prevent card click event from firing
+        speakText(word.example);
+      };
+      exampleContent.appendChild(speakerIconExample);
+    }
+    return card;
+  }
+
+  function speakText(text) {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN'; // Set language to Chinese (Mandarin)
+      speechSynthesis.speak(utterance);
+    } else {
+      alert('Sorry, your browser does not support the Web Speech API.');
+    }
+  }
+
+  function toggleLearnedWord(char, cardElement) {
+    if (learnedWords.has(char)) {
+      learnedWords.delete(char);
+      cardElement.classList.remove('learned');
+    } else {
+      learnedWords.add(char);
+      cardElement.classList.add('learned');
+    }
+    localStorage.setItem('learnedWords', JSON.stringify(Array.from(learnedWords)));
+    updateProgressDisplay();
+  }
+
+  function loadLearnedWords() {
+    const storedLearnedWords = localStorage.getItem('learnedWords');
+    if (storedLearnedWords) {
+      learnedWords = new Set(JSON.parse(storedLearnedWords));
+    }
+  }
+
+  function updateProgressDisplay() {
+    const totalWords = Object.values(hskData).flat().length;
+    const progressDisplay = document.getElementById('progress-display');
+    if (progressDisplay) {
+      progressDisplay.textContent = `Learned: ${learnedWords.size} / ${totalWords} words`;
+    }
+  }
+
+  function renderHomePage() {
+    homePage.innerHTML = ''; // Clear existing content
+    for (const level in hskData) {
+      const levelDiv = document.createElement('div');
+      levelDiv.classList.add('level');
+
+      const levelButton = document.createElement('button');
+      levelButton.textContent = `${level} ▼`;
+      levelButton.onclick = () => toggle(`${level.toLowerCase()}-words`);
+      levelDiv.appendChild(levelButton);
+
+      const wordsDiv = document.createElement('div');
+      wordsDiv.id = `${level.toLowerCase()}-words`;
+      wordsDiv.classList.add('words');
+
+      if (hskData[level].length === 0) {
+        const noData = document.createElement('p');
+        noData.textContent = `No data available for ${level} yet.`;
+        wordsDiv.appendChild(noData);
+      } else {
+        hskData[level].forEach(word => {
+          wordsDiv.appendChild(createWordCard(word, true));
+        });
+      }
+      levelDiv.appendChild(wordsDiv);
+      homePage.appendChild(levelDiv);
+    }
+  }
+
+  function renderWordListPage() {
+    wordListPage.innerHTML = ''; // Clear existing content
+    const allWords = Object.values(hskData).flat(); // Get all words from all HSK levels
+    allWords.forEach(word => {
+      wordListPage.appendChild(createWordCard(word, false)); // Don't show example on list page
+    });
+  }
+
+  function toggle(id) {
+    const el = document.getElementById(id);
+    el.style.display = el.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    if (pageId === 'list') {
+      updateProgressDisplay(); // Update progress when switching to list page
+    }
+  }
+
+  function searchWord(keyword) {
+    const cards = document.querySelectorAll('#wordList .word-card');
+    cards.forEach(card => {
+      const text = card.innerText.toLowerCase();
+      card.style.display = text.includes(keyword.toLowerCase()) ? 'block' : 'none';
+    });
+  }
+
+  // Initial render
+  document.addEventListener('DOMContentLoaded', () => {
+    loadLearnedWords(); // Load learned words before rendering
+    renderHomePage();
+    renderWordListPage();
+    showPage('home'); // Show home page by default
+  });
+</script>
+
 </body>
 </html>
