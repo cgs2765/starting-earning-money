@@ -181,19 +181,61 @@
     wordContent.innerHTML = `
       <div class="word">${word.char}</div>
       <div class="pinyin">${word.pinyin}</div>
-      <div class="meaning">${word.meaning} (Korean: ${word.korean}, English: ${word.english})</div>
     `;
     card.appendChild(wordContent);
 
-    const speakerIconWord = document.createElement('span');
-    speakerIconWord.classList.add('speaker-icon');
-    speakerIconWord.textContent = '🔊';
-    speakerIconWord.title = 'Listen to word';
-    speakerIconWord.onclick = (event) => {
-      event.stopPropagation(); // Prevent card click event from firing
-      speakText(word.char);
+    const speakerIconChar = document.createElement('span'); // Speaker icon for Chinese character
+    speakerIconChar.classList.add('speaker-icon');
+    speakerIconChar.textContent = '🔊';
+    speakerIconChar.title = 'Listen to Chinese character';
+    speakerIconChar.onclick = (event) => {
+      event.stopPropagation();
+      speakText(word.char, 'zh-CN');
     };
-    wordContent.appendChild(speakerIconWord);
+    wordContent.querySelector('.word').appendChild(speakerIconChar);
+
+
+    const meaningDiv = document.createElement('div');
+    meaningDiv.classList.add('meaning');
+    meaningDiv.textContent = `Meaning: ${word.meaning}`;
+    const speakerIconMeaning = document.createElement('span');
+    speakerIconMeaning.classList.add('speaker-icon');
+    speakerIconMeaning.textContent = '🔊';
+    speakerIconMeaning.title = 'Listen to meaning';
+    speakerIconMeaning.onclick = (event) => {
+      event.stopPropagation();
+      speakText(word.meaning, 'en-US'); // Assuming meaning is in English
+    };
+    meaningDiv.appendChild(speakerIconMeaning);
+    card.appendChild(meaningDiv);
+
+    const koreanDiv = document.createElement('div');
+    koreanDiv.classList.add('korean');
+    koreanDiv.textContent = `Korean: ${word.korean}`;
+    const speakerIconKorean = document.createElement('span');
+    speakerIconKorean.classList.add('speaker-icon');
+    speakerIconKorean.textContent = '🔊';
+    speakerIconKorean.title = 'Listen to Korean translation';
+    speakerIconKorean.onclick = (event) => {
+      event.stopPropagation();
+      speakText(word.korean, 'ko-KR'); // Specify Korean language
+    };
+    koreanDiv.appendChild(speakerIconKorean);
+    card.appendChild(koreanDiv);
+
+    const englishDiv = document.createElement('div');
+    englishDiv.classList.add('english');
+    englishDiv.textContent = `English: ${word.english}`;
+    const speakerIconEnglish = document.createElement('span');
+    speakerIconEnglish.classList.add('speaker-icon');
+    speakerIconEnglish.textContent = '🔊';
+    speakerIconEnglish.title = 'Listen to English translation';
+    speakerIconEnglish.onclick = (event) => {
+      event.stopPropagation();
+      speakText(word.english, 'en-US'); // Specify English language
+    };
+    englishDiv.appendChild(speakerIconEnglish);
+    card.appendChild(englishDiv);
 
     if (showExample && word.example) {
       const exampleContent = document.createElement('div');
@@ -207,17 +249,17 @@
       speakerIconExample.title = 'Listen to example';
       speakerIconExample.onclick = (event) => {
         event.stopPropagation(); // Prevent card click event from firing
-        speakText(word.example);
+        speakText(word.example, 'zh-CN'); // Example is in Chinese
       };
       exampleContent.appendChild(speakerIconExample);
     }
     return card;
   }
 
-  function speakText(text) {
+  function speakText(text, lang) {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'zh-CN'; // Set language to Chinese (Mandarin)
+      utterance.lang = lang; // Set language based on parameter
       speechSynthesis.speak(utterance);
     } else {
       alert('Sorry, your browser does not support the Web Speech API.');
