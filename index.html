@@ -58,9 +58,14 @@
 </header>
 
 <div class="container">
+  <div id="loading-message" style="text-align: center; padding: 50px;">
+    <h2>로딩 중...</h2>
+    <p>데이터를 불러오는 중입니다. 잠시만 기다려 주세요.</p>
+    <p style="font-size: 0.8em; color: #888;">(만약 로딩이 계속된다면 브라우저의 자바스크립트 설정을 확인하거나 페이지를 새로고침해 주세요.)</p>
+  </div>
 
   <!-- 학습 페이지 -->
-  <div id="home" class="page active"></div>
+  <div id="home" class="page"></div>
 
   <!-- 단어 리스트 페이지 -->
   <div id="list" class="page">
@@ -190,7 +195,8 @@
       { char: '促进', pinyin: 'cù jìn', meaning: 'to promote, to accelerate', korean: '촉진하다', english: 'to promote, to accelerate', example: '促进交流。' },
       { char: '可持续', pinyin: 'kě chí xù', meaning: 'sustainable', korean: '지속 가능한', english: 'sustainable', example: '可持续发展。' },
       { char: '格局', pinyin: 'gé jú', meaning: 'structure, pattern', korean: '국면, 판세', english: 'structure, pattern', example: '国际格局。' },
-    ],
+    ]
+  };
 
   const homePage = document.getElementById('home');
   const wordListPage = document.getElementById('wordList');
@@ -263,65 +269,95 @@
   }
 
   function loadLearnedWords() {
-    const storedLearnedWords = localStorage.getItem('learnedWords');
-    if (storedLearnedWords) {
-      learnedWords = new Set(JSON.parse(storedLearnedWords));
+    try {
+      const storedLearnedWords = localStorage.getItem('learnedWords');
+      if (storedLearnedWords) {
+        learnedWords = new Set(JSON.parse(storedLearnedWords));
+      }
+      console.log('Learned words loaded:', learnedWords.size);
+    } catch (e) {
+      console.error('Failed to load learned words from localStorage:', e);
     }
   }
 
   function updateProgressDisplay() {
-    const totalWords = Object.values(hskData).flat().length;
-    const progressDisplay = document.getElementById('progress-display');
-    if (progressDisplay) {
-      progressDisplay.textContent = `Learned: ${learnedWords.size} / ${totalWords} words`;
+    try {
+      const totalWords = Object.values(hskData).flat().length;
+      const progressDisplay = document.getElementById('progress-display');
+      if (progressDisplay) {
+        progressDisplay.textContent = `Learned: ${learnedWords.size} / ${totalWords} words`;
+      }
+    } catch (e) {
+      console.error('Error updating progress display:', e);
     }
   }
 
   function renderHomePage() {
-    homePage.innerHTML = ''; // Clear existing content
-    for (const level in hskData) {
-      const levelDiv = document.createElement('div');
-      levelDiv.classList.add('level');
+    console.log('Rendering home page...');
+    try {
+      homePage.innerHTML = ''; // Clear existing content
+      for (const level in hskData) {
+        const levelDiv = document.createElement('div');
+        levelDiv.classList.add('level');
 
-      const levelButton = document.createElement('button');
-      levelButton.textContent = `${level} ▼`;
-      levelButton.onclick = () => toggle(`${level.toLowerCase()}-words`);
-      levelDiv.appendChild(levelButton);
+        const levelButton = document.createElement('button');
+        levelButton.textContent = `${level} ▼`;
+        levelButton.onclick = () => toggle(`${level.toLowerCase()}-words`);
+        levelDiv.appendChild(levelButton);
 
-      const wordsDiv = document.createElement('div');
-      wordsDiv.id = `${level.toLowerCase()}-words`;
-      wordsDiv.classList.add('words');
+        const wordsDiv = document.createElement('div');
+        wordsDiv.id = `${level.toLowerCase()}-words`;
+        wordsDiv.classList.add('words');
 
-      if (hskData[level].length === 0) {
-        const noData = document.createElement('p');
-        noData.textContent = `No data available for ${level} yet.`;
-        wordsDiv.appendChild(noData);
-      } else {
-        hskData[level].forEach(word => {
-          wordsDiv.appendChild(createWordCard(word, true));
-        });
+        if (hskData[level].length === 0) {
+          const noData = document.createElement('p');
+          noData.textContent = `No data available for ${level} yet.`;
+          wordsDiv.appendChild(noData);
+        } else {
+          hskData[level].forEach(word => {
+            wordsDiv.appendChild(createWordCard(word, true));
+          });
+        }
+        levelDiv.appendChild(wordsDiv);
+        homePage.appendChild(levelDiv);
       }
-      levelDiv.appendChild(wordsDiv);
-      homePage.appendChild(levelDiv);
+      console.log('Home page rendered successfully.');
+    } catch (e) {
+      console.error('Error rendering home page:', e);
     }
   }
 
   function renderWordListPage() {
-    wordListPage.innerHTML = ''; // Clear existing content
-    const allWords = Object.values(hskData).flat(); // Get all words from all HSK levels
-    allWords.forEach(word => {
-      wordListPage.appendChild(createWordCard(word, false)); // Don't show example on list page
-    });
+    console.log('Rendering word list page...');
+    try {
+      wordListPage.innerHTML = ''; // Clear existing content
+      const allWords = Object.values(hskData).flat(); // Get all words from all HSK levels
+      allWords.forEach(word => {
+        wordListPage.appendChild(createWordCard(word, false)); // Don't show example on list page
+      });
+      console.log('Word list page rendered successfully.');
+    } catch (e) {
+      console.error('Error rendering word list page:', e);
+    }
   }
 
   function toggle(id) {
     const el = document.getElementById(id);
-    el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    if (el) {
+      el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    }
   }
 
   function showPage(pageId) {
+    console.log('Switching to page:', pageId);
+    const loadingMsg = document.getElementById('loading-message');
+    if (loadingMsg) loadingMsg.style.display = 'none';
+
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(pageId).classList.add('active');
+    const targetPage = document.getElementById(pageId);
+    if (targetPage) {
+      targetPage.classList.add('active');
+    }
     if (pageId === 'list') {
       updateProgressDisplay(); // Update progress when switching to list page
     }
@@ -337,10 +373,15 @@
 
   // Initial render
   document.addEventListener('DOMContentLoaded', () => {
-    loadLearnedWords(); // Load learned words before rendering
-    renderHomePage();
-    renderWordListPage();
-    showPage('home'); // Show home page by default
+    console.log('DOM fully loaded and parsed');
+    try {
+      loadLearnedWords(); // Load learned words before rendering
+      renderHomePage();
+      renderWordListPage();
+      showPage('home'); // Show home page by default
+    } catch (e) {
+      console.error('Error during initial rendering:', e);
+    }
   });
 </script>
 
